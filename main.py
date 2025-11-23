@@ -16,11 +16,11 @@ if __name__ == "__main__":
     db_session = SessionLocal()    
 
     # Test the redesigned CreateAccountView
-    vm = CreateAccountViewModel(db_session)
-    win = CreateAccountView(vm)
+    # vm = CreateAccountViewModel(db_session)
+    # win = CreateAccountView(vm)
     
-    # vm = LoginViewModel(db_session)
-    # win = LoginView(vm)
+    vm = LoginViewModel(db_session)
+    win = LoginView(vm)
 
     win.show()
 

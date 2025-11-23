@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, Signal, Slot, Property
+from PySide6.QtCore import QObject, Signal, Slot, Property, QSettings
 from sqlalchemy.orm import Session
 
 from core.services.user_service import UserService
@@ -14,13 +14,18 @@ class LoginViewModel(QObject):
     loginRequest= Signal()
     goToRegisterRequest= Signal()
 
+    rememberMeChanged = Signal(bool)
+
     def __init__(self, db_session: Session):
         super().__init__()
 
         self._username= ""
         self._password= ""
         self._error= ""
+        self._remember_me = False
         self.user_serivce= UserService(db_session)
+        
+        self._load_credentials()
 
     def get_username(self):
         return self._username
@@ -42,6 +47,16 @@ class LoginViewModel(QObject):
 
     password= Property(str, get_password, set_password, notify= passwordChanged)
 
+    def get_remember_me(self):
+        return self._remember_me
+
+    def set_remember_me(self, value):
+        if self._remember_me != value:
+            self._remember_me = value
+            self.rememberMeChanged.emit(value)
+
+    rememberMe = Property(bool, get_remember_me, set_remember_me, notify=rememberMeChanged)
+
     def get_error(self):
         return self._error
     
@@ -61,6 +76,12 @@ class LoginViewModel(QObject):
         if user:
             self.set_error("")
             print(f"Logged in as {user.user_name} ({user.role})")
+            
+            if self._remember_me:
+                self._save_credentials()
+            else:
+                self._clear_credentials()
+                
             self.loginRequest.emit()
         else:
             self.set_error("Invalid username or password")
@@ -68,3 +89,22 @@ class LoginViewModel(QObject):
     @Slot()
     def goToRegisterCommand(self):
         self.goToRegisterRequest.emit()
+
+    def _save_credentials(self):
+        settings = QSettings("MyCompany", "CashierApp")
+        settings.setValue("username", self._username)
+        settings.setValue("password", self._password) # Note: In production, encrypt this!
+        settings.setValue("remember_me", True)
+
+    def _load_credentials(self):
+        settings = QSettings("MyCompany", "CashierApp")
+        if settings.value("remember_me", False, type=bool):
+            self.set_username(settings.value("username", ""))
+            self.set_password(settings.value("password", ""))
+            self.set_remember_me(True)
+
+    def _clear_credentials(self):
+        settings = QSettings("MyCompany", "CashierApp")
+        settings.remove("username")
+        settings.remove("password")
+        settings.setValue("remember_me", False)
