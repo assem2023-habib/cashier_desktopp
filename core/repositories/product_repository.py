@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.product import Product
 from sqlalchemy.exc import SQLAlchemyError
+from typing import List
 
 from core.abstracts.product_repository import IProductRepository
 
@@ -23,7 +24,7 @@ class ProductRepository(IProductRepository):
         except:
             return None
     
-    def list(self)->list[Product]:
+    def list(self)->List[Product]:
         try:
             return self.db.query(Product).all()
         except:
@@ -55,7 +56,7 @@ class ProductRepository(IProductRepository):
         except:
             return None
     
-    def paginate(self, page: int, per_page: int)->list[Product]:
+    def paginate(self, page: int, per_page: int)->List[Product]:
         try:
             offset_value = (page - 1) * per_page
             return (

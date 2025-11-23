@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from models.invoice import Invoice
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import date
+from typing import List
 
 from core.abstracts.invoice_repository import IInvoiceRepository
 
@@ -24,7 +25,7 @@ class InvoiceRepository(IInvoiceRepository):
         except:
             return None
     
-    def list(self)->list[Invoice]:
+    def list(self)->List[Invoice]:
         try:
             return self.db.query(Invoice).all()
         except:
@@ -46,7 +47,7 @@ class InvoiceRepository(IInvoiceRepository):
         except SQLAlchemyError:
             return False
 
-    def list_by_date_range(self, start: date, end: date)->list[Invoice]:
+    def list_by_date_range(self, start: date, end: date)->List[Invoice]:
         try:
             return (
                 self.db.query(Invoice)
@@ -56,7 +57,7 @@ class InvoiceRepository(IInvoiceRepository):
         except:
             return []
     
-    def paginate(self, page: int, per_page: int)->list[Invoice]:
+    def paginate(self, page: int, per_page: int)->List[Invoice]:
         try:
             offset_value = (page - 1) * per_page
             return (
@@ -67,5 +68,3 @@ class InvoiceRepository(IInvoiceRepository):
             )
         except:
             return []
-    
-    

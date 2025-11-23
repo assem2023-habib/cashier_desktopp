@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.invoice_item import InvoiceItem
 from core.abstracts.invoice_item_repository import IInvoiceItemRepository
+from typing import List
 
 class InvoiceItemRepository(IInvoiceItemRepository):
     def __init__(self, db: Session):
@@ -15,7 +16,7 @@ class InvoiceItemRepository(IInvoiceItemRepository):
     def get(self, item_id: int)->InvoiceItem:
         return self.db.query(InvoiceItem).filter(InvoiceItem.id == item_id).first()
     
-    def list(self)->list[InvoiceItem]:
+    def list(self)->List[InvoiceItem]:
         return self.db.query(InvoiceItem).all()
     
     def update(self, item: InvoiceItem)->InvoiceItem:
@@ -31,9 +32,9 @@ class InvoiceItemRepository(IInvoiceItemRepository):
         except:
             return False
 
-    def list_by_invoice_id(self, invoice_id: int)->list[InvoiceItem]:
+    def list_by_invoice_id(self, invoice_id: int)->List[InvoiceItem]:
         return self.db.query(InvoiceItem).filter(InvoiceItem.invoice_id == invoice_id).all()
     
-    def paginate(self, page: int, per_page: int)->list[InvoiceItem]:
+    def paginate(self, page: int, per_page: int)->List[InvoiceItem]:
         offset_value= (page - 1) * per_page
         return self.db.query(InvoiceItem).offset(offset_value).limit(per_page).all()

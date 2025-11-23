@@ -130,6 +130,26 @@ class InvoiceService:
     def get_invoices_by_date_range(self, start: date, end: date)->List[Invoice]:
         return self.invoice_repo.list_by_date_range(start, end)
     
+    def get_invoices_paginated(self, page: int, per_page: int) -> tuple[List[Invoice], int]:
+        """Returns a tuple of (invoices, total_count)"""
+        try:
+            invoices = self.invoice_repo.paginate(page, per_page)
+            total_count = self.db.query(Invoice).count()
+            return invoices, total_count
+        except SQLAlchemyError:
+            return [], 0
+
+    def search_invoices(self, query: str) -> List[Invoice]:
+        try:
+            # Search by ID (as string) or maybe date string if needed
+            # For now, simple ID search
+            if query.isdigit():
+                invoice = self.invoice_repo.get(int(query))
+                return [invoice] if invoice else []
+            return []
+        except SQLAlchemyError:
+            return []
+    
     def get_today_invoices(self):
         today= date.today()
         return self.invoice_repo.list_by_date_range(today, today)

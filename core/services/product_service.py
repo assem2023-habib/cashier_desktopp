@@ -75,14 +75,14 @@ class ProductService:
             self.db.rollback()
             return None
         
-    def get_low_quantity_products(self, threshold: int= 10)->list[Product]:
+    def get_low_quantity_products(self, threshold: int= 10)->List[Product]:
         try:
             all_proudcts= self.product_repo.list()
             return [p for p in all_proudcts if p.quantity <= threshold]
         except SQLAlchemyError:
             return []
         
-    def search_products(self, query: str)->list[Product]:
+    def search_products(self, query: str)->List[Product]:
         try:
             all_products= self.product_repo.list()
             query_lower = query.lower()
@@ -97,6 +97,66 @@ class ProductService:
     def get_product_by_barcode(self, barcode: str)->Optional[Product]:
         return self.product_repo.get_by_barcode(barcode)
     
+    def update_product(
+        self,
+        product_id: int,
+        name: str,
+        barcode: str,
+        price: int,
+        quantity: int
+    ) -> Optional[Product]:
+        try:
+            product = self.product_repo.get(product_id)
+            if not product:
+                raise ValueError(f"Product {product_id} not found")
+
+            # Check if barcode is being changed to one that already exists
+            if barcode != product.barcode:
+                existing = self.product_repo.get_by_barcode(barcode)
+                if existing:
+                    raise ValueError(f"Product with barcode {barcode} already exists")
+
+            product.name = name
+            product.barcode = barcode
+            product.price = price
+            product.quantity = quantity
+
+            product = self.product_repo.update(product)
+            self.db.commit()
+            return product
+        except (SQLAlchemyError, ValueError) as e:
+            self.db.rollback()
+            return None
+
+    def delete_product(self, product_id: int) -> bool:
+        try:
+            product = self.product_repo.get(product_id)
+            if not product:
+                return False
+            
+            success = self.product_repo.delete(product)
+            if success:
+                self.db.commit()
+                return True
+            return False
+        except SQLAlchemyError:
+            self.db.rollback()
+            return False
+
+    def get_products_paginated(self, page: int, per_page: int) -> tuple[List[Product], int]:
+        """Returns a tuple of (products, total_count)"""
+        try:
+            products = self.product_repo.paginate(page, per_page)
+            # We need a count method in repo ideally, but for now let's just get all count
+            # This is inefficient for large datasets but works for now. 
+            # Ideally repo should have count().
+            # Let's add a quick count query here or just list() len if repo doesn't support count.
+            # Checking repo... it has list().
+            total_count = self.db.query(Product).count()
+            return products, total_count
+        except SQLAlchemyError:
+            return [], 0
+
     def update_price(self, product_id: int, new_price:int)->Optional[Product]:
         try:
             if new_price <= 0:
