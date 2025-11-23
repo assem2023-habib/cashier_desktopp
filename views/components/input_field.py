@@ -22,6 +22,9 @@ class InputField(FormRow):
                 font-size: 14px;
                 color: black;
             }
+            QLineEdit::placeholder {
+                color: #9CA3AF;
+            }
         """)
 
         if icon:

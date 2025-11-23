@@ -23,6 +23,9 @@ class PasswordField(FormRow):
                 color: black;
                 font-size: 14px;
             }
+            QLineEdit::placeholder {
+                color: #9CA3AF;
+            }
         """)
 
         act = QAction(icon, self.input)
