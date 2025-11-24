@@ -1,8 +1,12 @@
 from PySide6.QtCore import QObject, Signal, Slot, Property
 
 class DashboardViewModel(QObject):
-    def __init__(self):
+    def __init__(self, db_session, current_user=None):
         super().__init__()
+        # Store current user information
+        self.current_user = current_user
+        self.db_session = db_session
+        
         # Mock Data for now
         self._daily_sales = "$1,500"
         self._receipts_count = "125"

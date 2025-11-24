@@ -1,11 +1,11 @@
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, 
                                QFrame, QSizePolicy, QListWidget, QListWidgetItem, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView)
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, QTimer, QDateTime
 from PySide6.QtGui import QColor, QIcon, QPainter, QBrush, QPen
 
 # --- Top Bar ---
 class TopBar(QFrame):
-    def __init__(self):
+    def __init__(self, username=None, user_role=None):
         super().__init__()
         self.setFixedHeight(70)
         self.setStyleSheet("background-color: #FFFFFF; border-bottom: 1px solid #E0E0E0;")
@@ -30,11 +30,13 @@ class TopBar(QFrame):
         info_layout = QHBoxLayout()
         info_layout.setSpacing(20)
         
-        user_label = QLabel("User: Jane Doe (Cashier)")
-        date_label = QLabel("Date: 2023-10-26")
-        time_label = QLabel("Time: 10:30 AM")
+        # User label with dynamic data
+        user_display = f"{username or 'Guest'} ({user_role or 'N/A'})"
+        self.user_label = QLabel(f"User: {user_display}")
+        # self.date_label = QLabel("Date: --") # Removed as per request
+        self.time_label = QLabel("Time: --")
         
-        for lbl in [user_label, date_label, time_label]:
+        for lbl in [self.user_label, self.time_label]:
             lbl.setStyleSheet("font-family: Sans-serif; font-size: 14px; color: #333333;")
             info_layout.addWidget(lbl)
             
@@ -84,6 +86,18 @@ class TopBar(QFrame):
         actions_layout.addWidget(self.btn_lock)
         
         layout.addLayout(actions_layout)
+        
+        # Start timer to update date/time every second
+        self._update_datetime()
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self._update_datetime)
+        self.timer.start(1000)  # Update every 1 second
+    
+    def _update_datetime(self):
+        """Update time label with current values"""
+        current_dt = QDateTime.currentDateTime()
+        # self.date_label.setText(f"Date: {current_dt.toString('yyyy-MM-dd')}")
+        self.time_label.setText(f"Time: {current_dt.toString('hh:mm:ss AP')}")
 
 # --- Sidebar ---
 class Sidebar(QFrame):
@@ -123,6 +137,7 @@ class Sidebar(QFrame):
         items = [
             ("POS Screen", "🖥️"),
             ("Products", "📦"),
+            ("Categories", "📂"),
             ("Reports", "📊"),
             ("Users", "👥"),
             ("Activity Log", "📝"),

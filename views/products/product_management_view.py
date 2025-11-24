@@ -68,7 +68,7 @@ class ProductManagementView(QWidget):
         )
 
     def _open_add_dialog(self):
-        dialog = AddEditProductDialog(self)
+        dialog = AddEditProductDialog(self, categories=self.vm.get_categories())
         if dialog.exec():
             data = dialog.get_data()
             self.vm.addProduct(
@@ -76,7 +76,7 @@ class ProductManagementView(QWidget):
                 data["barcode"],
                 data["price"],
                 data["quantity"],
-                data["category"],
+                data["category_id"],
                 data["low_stock_threshold"]
             )
 
@@ -86,7 +86,7 @@ class ProductManagementView(QWidget):
         if not product:
             return
             
-        dialog = AddEditProductDialog(self, product)
+        dialog = AddEditProductDialog(self, product, categories=self.vm.get_categories())
         if dialog.exec():
             data = dialog.get_data()
             self.vm.updateProduct(
@@ -95,7 +95,7 @@ class ProductManagementView(QWidget):
                 data["barcode"],
                 data["price"],
                 data["quantity"],
-                data["category"],
+                data["category_id"],
                 data["low_stock_threshold"]
             )
 

@@ -1,11 +1,14 @@
 from PySide6.QtCore import QObject, Signal, Slot, Property
 from sqlalchemy.orm import Session
 from core.services.product_service import ProductService
+from core.services.category_service import CategoryService
+from core.repositories.category_repository import CategoryRepository
 from models.product import Product
 import math
 
 class ProductViewModel(QObject):
     productsChanged = Signal()
+    categoriesChanged = Signal()
     paginationChanged = Signal()
     isLoadingChanged = Signal(bool)
     errorChanged = Signal(str)
@@ -15,8 +18,10 @@ class ProductViewModel(QObject):
         super().__init__()
         self.db_session = db_session
         self.product_service = ProductService(db_session)
+        self.category_service = CategoryService(CategoryRepository(db_session))
         
         self._products = []
+        self._categories = []
         self._current_page = 1
         self._per_page = 10
         self._total_items = 0
@@ -28,6 +33,7 @@ class ProductViewModel(QObject):
 
         # Initial load
         self.load_products()
+        self.load_categories()
 
     @Property(bool, notify=isLoadingChanged)
     def isLoading(self):
@@ -60,6 +66,9 @@ class ProductViewModel(QObject):
 
     def get_products(self):
         return self._products
+    
+    def get_categories(self):
+        return self._categories
 
     # We don't expose products as a simple property because it's a list of objects 
     # that might be complex to bind directly in some contexts, but for Python usage it's fine.
@@ -103,6 +112,14 @@ class ProductViewModel(QObject):
         finally:
             self.set_is_loading(False)
 
+    @Slot()
+    def load_categories(self):
+        try:
+            self._categories = self.category_service.get_all_categories()
+            self.categoriesChanged.emit()
+        except Exception as e:
+            print(f"Error loading categories: {e}")
+
     @Slot(str)
     def search(self, query):
         self._search_query = query
@@ -121,16 +138,16 @@ class ProductViewModel(QObject):
             self._current_page -= 1
             self.load_products()
 
-    @Slot(str, str, str, str, str, str)
-    def addProduct(self, name, barcode, price_str, quantity_str, category, low_stock_threshold):
+    @Slot(str, str, str, str, int, str)
+    def addProduct(self, name, barcode, price_str, quantity_str, category_id, low_stock_threshold):
         try:
             price = int(float(price_str)) # Handle potential float input
             quantity = int(quantity_str)
             
-            # Category and low_stock_threshold are ignored for persistence as per plan
-            # but we accept them to match UI
+            # low_stock_threshold is ignored for persistence as per plan
+            # but we accept it to match UI
             
-            product = self.product_service.create_product(name, barcode, price, quantity)
+            product = self.product_service.create_product(name, barcode, price, quantity, category_id)
             if product:
                 self._success = "Product added successfully"
                 self.successChanged.emit(self._success)
@@ -145,13 +162,13 @@ class ProductViewModel(QObject):
             self._error = f"An error occurred: {str(e)}"
             self.errorChanged.emit(self._error)
 
-    @Slot(int, str, str, str, str, str, str)
-    def updateProduct(self, product_id, name, barcode, price_str, quantity_str, category, low_stock_threshold):
+    @Slot(int, str, str, str, str, int, str)
+    def updateProduct(self, product_id, name, barcode, price_str, quantity_str, category_id, low_stock_threshold):
         try:
             price = int(float(price_str))
             quantity = int(quantity_str)
             
-            product = self.product_service.update_product(product_id, name, barcode, price, quantity)
+            product = self.product_service.update_product(product_id, name, barcode, price, quantity, category_id)
             if product:
                 self._success = "Product updated successfully"
                 self.successChanged.emit(self._success)

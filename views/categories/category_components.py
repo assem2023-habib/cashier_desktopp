@@ -1,12 +1,11 @@
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QPushButton, 
     QTableWidget, QTableWidgetItem, QHeaderView, QDialog, QFrame, 
-    QAbstractItemView, QComboBox, QMessageBox
+    QAbstractItemView
 )
 from PySide6.QtCore import Qt, Signal
-from enums.user_role_enum import UserRole
 
-# --- Constants for Styling (Reusing consistent styles) ---
+# --- Constants for Styling ---
 COLOR_WHITE = "#FFFFFF"
 COLOR_DARK_GREY = "#333333"
 COLOR_LIGHT_GREY = "#9CA3AF"
@@ -14,11 +13,12 @@ COLOR_BORDER = "#D1D5DB"
 COLOR_GREEN = "#28A745"
 COLOR_RED = "#DC3545"
 COLOR_NAVY = "#2F3C64"
+COLOR_ORANGE = "#ED6B6B"
 FONT_FAMILY = "Sans-serif"
 
-class UserTable(QWidget):
-    editClicked = Signal(object) # User object
-    deleteClicked = Signal(int) # user_id
+class CategoryTable(QWidget):
+    editClicked = Signal(object) # Category object
+    deleteClicked = Signal(int) # category_id
 
     def __init__(self):
         super().__init__()
@@ -27,14 +27,14 @@ class UserTable(QWidget):
         layout.setSpacing(10)
 
         # Header
-        header_lbl = QLabel("Users")
+        header_lbl = QLabel("Categories")
         header_lbl.setStyleSheet(f"font-family: {FONT_FAMILY}; font-weight: bold; font-size: 16px; color: {COLOR_DARK_GREY};")
         layout.addWidget(header_lbl)
 
         # Table
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["ID", "Username", "Role", "Actions"])
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Actions"])
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -73,22 +73,17 @@ class UserTable(QWidget):
         """)
         layout.addWidget(self.table)
         
-        # Keep track of user objects
-        self.users = []
+        self.categories = []
 
-    def set_users(self, users):
-        self.users = users
-        self.table.setRowCount(len(users))
-        for i, user in enumerate(users):
+    def set_categories(self, categories):
+        self.categories = categories
+        self.table.setRowCount(len(categories))
+        for i, category in enumerate(categories):
             # ID
-            self.table.setItem(i, 0, QTableWidgetItem(str(user.id)))
+            self.table.setItem(i, 0, QTableWidgetItem(str(category.id)))
             
-            # Username
-            self.table.setItem(i, 1, QTableWidgetItem(user.user_name))
-            
-            # Role
-            role_str = user.role.value if hasattr(user.role, 'value') else str(user.role)
-            self.table.setItem(i, 2, QTableWidgetItem(role_str))
+            # Name
+            self.table.setItem(i, 1, QTableWidgetItem(category.name))
             
             # Actions
             actions_widget = QWidget()
@@ -113,7 +108,7 @@ class UserTable(QWidget):
                     background-color: #BBDEFB;
                 }}
             """)
-            edit_btn.clicked.connect(lambda checked, u=user: self.editClicked.emit(u))
+            edit_btn.clicked.connect(lambda checked, c=category: self.editClicked.emit(c))
             
             delete_btn = QPushButton("Delete")
             delete_btn.setCursor(Qt.PointingHandCursor)
@@ -131,18 +126,18 @@ class UserTable(QWidget):
                     background-color: #FFCDD2;
                 }}
             """)
-            delete_btn.clicked.connect(lambda checked, uid=user.id: self.deleteClicked.emit(uid))
+            delete_btn.clicked.connect(lambda checked, cid=category.id: self.deleteClicked.emit(cid))
             
             actions_layout.addWidget(edit_btn)
             actions_layout.addWidget(delete_btn)
-            self.table.setCellWidget(i, 3, actions_widget)
+            self.table.setCellWidget(i, 2, actions_widget)
 
-class AddEditUserDialog(QDialog):
-    def __init__(self, parent=None, user=None):
+class AddEditCategoryDialog(QDialog):
+    def __init__(self, parent=None, category=None):
         super().__init__(parent)
-        self.user = user
-        self.setWindowTitle("Edit User" if user else "Add New User")
-        self.setFixedSize(400, 350)
+        self.category = category
+        self.setWindowTitle("Edit Category" if category else "Add New Category")
+        self.setFixedSize(400, 250)
         self.setStyleSheet(f"background-color: {COLOR_WHITE};")
         
         layout = QVBoxLayout(self)
@@ -150,35 +145,18 @@ class AddEditUserDialog(QDialog):
         layout.setSpacing(15)
         
         # Title
-        title = QLabel("Edit User" if user else "Add New User")
+        title = QLabel("Edit Category" if category else "Add New Category")
         title.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {COLOR_DARK_GREY}; margin-bottom: 10px;")
         layout.addWidget(title)
         
-        # Username
-        self.username_input = QLineEdit()
-        self.username_input.setPlaceholderText("Username")
-        self.username_input.setStyleSheet(self._input_style())
-        if user:
-            self.username_input.setText(user.user_name)
-        layout.addWidget(QLabel("Username"))
-        layout.addWidget(self.username_input)
-        
-        # Role
-        self.role_input = QComboBox()
-        self.role_input.addItems([r.value for r in UserRole])
-        self.role_input.setStyleSheet(self._input_style())
-        if user:
-            self.role_input.setCurrentText(user.role.value)
-        layout.addWidget(QLabel("Role"))
-        layout.addWidget(self.role_input)
-        
-        # Password
-        self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Password (leave empty to keep current)" if user else "Password")
-        self.password_input.setEchoMode(QLineEdit.Password)
-        self.password_input.setStyleSheet(self._input_style())
-        layout.addWidget(QLabel("Password"))
-        layout.addWidget(self.password_input)
+        # Name
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Category Name")
+        self.name_input.setStyleSheet(self._input_style())
+        if category:
+            self.name_input.setText(category.name)
+        layout.addWidget(QLabel("Name"))
+        layout.addWidget(self.name_input)
         
         # Buttons
         btn_layout = QHBoxLayout()
@@ -209,7 +187,5 @@ class AddEditUserDialog(QDialog):
 
     def get_data(self):
         return {
-            "username": self.username_input.text(),
-            "role": self.role_input.currentText(),
-            "password": self.password_input.text()
+            "name": self.name_input.text()
         }

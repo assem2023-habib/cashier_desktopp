@@ -15,7 +15,6 @@ class LoginViewModel(QObject):
     goToRegisterRequest= Signal()
 
     rememberMeChanged = Signal(bool)
-
     def __init__(self, db_session: Session):
         super().__init__()
 
@@ -23,7 +22,9 @@ class LoginViewModel(QObject):
         self._password= ""
         self._error= ""
         self._remember_me = False
+        self.db_session = db_session
         self.user_serivce= UserService(db_session)
+        self.logged_user = None  # Store logged-in user
         
         self._load_credentials()
 
@@ -75,6 +76,7 @@ class LoginViewModel(QObject):
         user= self.user_serivce.login(self._username, self._password)
         if user:
             self.set_error("")
+            self.logged_user = user  # Store the logged-in user
             print(f"Logged in as {user.user_name} ({user.role})")
             
             if self._remember_me:

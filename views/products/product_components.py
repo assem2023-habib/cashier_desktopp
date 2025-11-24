@@ -138,11 +138,11 @@ class ProductTable(QWidget):
                 font-weight: bold;
                 border: none;
                 border-bottom: 2px solid #F0F0F0;
-                padding: 12px;
+                padding: 8px 12px;
                 text-align: left;
             }}
             QTableWidget::item {{
-                padding: 12px;
+                padding: 8px 12px;
                 color: {COLOR_DARK_GREY};
                 border-bottom: 1px solid #F5F5F5;
             }}
@@ -181,8 +181,9 @@ class ProductTable(QWidget):
             status_layout.addWidget(text)
             self.table.setCellWidget(i, 2, status_widget)
             
-            # Category (Mocked)
-            self.table.setItem(i, 3, QTableWidgetItem("Uncategorized"))
+            # Category
+            category_name = product.category.name if product.category else "Uncategorized"
+            self.table.setItem(i, 3, QTableWidgetItem(category_name))
             
             # Status (Text)
             status_text = "Low Stock" if is_low_stock else "In Stock"
@@ -274,11 +275,12 @@ class PaginationControls(QWidget):
         self.next_btn.setEnabled(current_page < total_pages)
 
 class AddEditProductDialog(QDialog):
-    def __init__(self, parent=None, product=None):
+    def __init__(self, parent=None, product=None, categories=None):
         super().__init__(parent)
         self.product_id = product.id if product else None
+        self.categories = categories or []
         self.setWindowTitle("Add/Edit Product")
-        self.setFixedSize(450, 600)
+        self.setFixedSize(450, 650)
         self.setStyleSheet(f"background-color: {COLOR_WHITE};")
         
         # Remove default frame and make it look like a card
@@ -314,24 +316,30 @@ class AddEditProductDialog(QDialog):
         card_layout.addWidget(header)
         
         # Fields
-        self.name_input = self._create_input("Product Name", product.name if product else "")
+        self.name_input = self._create_input("Product Name", "📦 Product Name", product.name if product else "")
         card_layout.addWidget(self.name_input)
         
-        self.barcode_input = self._create_input("Barcode", product.barcode if product else "")
+        self.barcode_input = self._create_input("Barcode", "🔢 Barcode", product.barcode if product else "", is_barcode=True)
         card_layout.addWidget(self.barcode_input)
         
-        self.price_input = self._create_input("Price", str(product.price) if product else "")
+        self.price_input = self._create_input("Price", "💲 Price", str(product.price) if product else "")
         card_layout.addWidget(self.price_input)
         
-        self.quantity_input = self._create_input("Quantity", str(product.quantity) if product else "")
+        self.quantity_input = self._create_input("Quantity", "📊 Quantity", str(product.quantity) if product else "")
         card_layout.addWidget(self.quantity_input)
         
-        self.low_stock_input = self._create_input("Low Stock Threshold", "10")
-        card_layout.addWidget(self.low_stock_input)
-        
         # Category Dropdown
+        card_layout.addWidget(QLabel("📂 Category"))
         self.category_combo = QComboBox()
-        self.category_combo.addItems(["Beverages", "Snacks", "Merchandise", "Equipment"])
+        self.category_combo.addItem("Select Category", None)
+        for cat in self.categories:
+            self.category_combo.addItem(cat.name, cat.id)
+            
+        if product and product.category_id:
+            index = self.category_combo.findData(product.category_id)
+            if index >= 0:
+                self.category_combo.setCurrentIndex(index)
+                
         self.category_combo.setStyleSheet(f"""
             QComboBox {{
                 border: 1px solid {COLOR_BORDER};
@@ -395,7 +403,21 @@ class AddEditProductDialog(QDialog):
         
         main_layout.addWidget(card)
 
-    def _create_input(self, placeholder, text=""):
+    def _create_input(self, placeholder, label_text, text="", is_barcode=False):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0,0,0,0)
+        layout.setSpacing(5)
+        
+        label = QLabel(label_text)
+        label.setStyleSheet(f"font-weight: bold; color: {COLOR_DARK_GREY};")
+        layout.addWidget(label)
+        
+        input_container = QWidget()
+        input_layout = QHBoxLayout(input_container)
+        input_layout.setContentsMargins(0, 0, 0, 0)
+        input_layout.setSpacing(10)
+        
         inp = QLineEdit()
         inp.setPlaceholderText(placeholder)
         inp.setText(text)
@@ -409,14 +431,44 @@ class AddEditProductDialog(QDialog):
                 background-color: {COLOR_WHITE};
             }}
         """)
-        return inp
+        input_layout.addWidget(inp)
+        
+        if is_barcode:
+            generate_btn = QPushButton("Generate")
+            generate_btn.setCursor(Qt.PointingHandCursor)
+            generate_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {COLOR_NAVY};
+                    color: {COLOR_WHITE};
+                    border: none;
+                    border-radius: 6px;
+                    padding: 10px 15px;
+                    font-weight: bold;
+                    font-family: {FONT_FAMILY};
+                }}
+                QPushButton:hover {{
+                    background-color: #1E2A47;
+                }}
+            """)
+            generate_btn.clicked.connect(lambda: self.generate_barcode(inp))
+            input_layout.addWidget(generate_btn)
+            
+        layout.addWidget(input_container)
+        return container
+
+    def generate_barcode(self, input_field):
+        # Generate a unique 12-digit barcode
+        import random
+        import string
+        barcode = ''.join(random.choices(string.digits, k=12))
+        input_field.setText(barcode)
 
     def get_data(self):
         return {
-            "name": self.name_input.text(),
-            "barcode": self.barcode_input.text(),
-            "price": self.price_input.text(),
-            "quantity": self.quantity_input.text(),
-            "category": self.category_combo.currentText(),
-            "low_stock_threshold": self.low_stock_input.text()
+            "name": self.name_input.findChild(QLineEdit).text(),
+            "barcode": self.barcode_input.findChild(QLineEdit).text(),
+            "price": self.price_input.findChild(QLineEdit).text(),
+            "quantity": self.quantity_input.findChild(QLineEdit).text(),
+            "category_id": self.category_combo.currentData(),
+            "low_stock_threshold": "10" # Default value as we removed the input
         }

@@ -31,6 +31,7 @@ def get_session():
 def init_db():
     from models.user import User
     from models.product import Product
+    from models.category import Category
     from models.invoice import Invoice
     from models.invoice_item import InvoiceItem
     from models.customer import Customer

@@ -4,8 +4,13 @@ from PySide6.QtCore import Qt
 from viewmodels.dashboard.dashboard_viewmodel import DashboardViewModel
 from views.dashboard.dashboard_components import TopBar, Sidebar
 from views.products.product_management_view import ProductManagementView
+from views.categories.category_management_view import CategoryManagementView
+from viewmodels.categories.category_viewmodel import CategoryViewModel
+from core.services.category_service import CategoryService
+from core.repositories.category_repository import CategoryRepository
 from views.dashboard.summary_view import SummaryView
 from views.invoices.invoice_management_view import InvoiceManagementView
+from views.users.user_management_view import UserManagementView
 
 class DashboardView(QMainWindow):
     def __init__(self, viewModel: DashboardViewModel):
@@ -22,7 +27,9 @@ class DashboardView(QMainWindow):
         main_layout.setSpacing(0)
         
         # 1. Top Bar
-        self.top_bar = TopBar()
+        username = self.vm.current_user.user_name if self.vm.current_user else "Guest"
+        user_role = str(self.vm.current_user.role.value) if self.vm.current_user else "N/A"
+        self.top_bar = TopBar(username=username, user_role=user_role)
         main_layout.addWidget(self.top_bar)
         
         # 2. Content Area (Sidebar + Main Content)
@@ -46,28 +53,27 @@ class DashboardView(QMainWindow):
         self.product_view = ProductManagementView()
         self.stacked_widget.addWidget(self.product_view)
         
-        # View 2: Reports (Placeholder)
+        # View 2: Categories
+        # Initialize Category ViewModel
+        category_repo = CategoryRepository(self.vm.db_session)
+        category_service = CategoryService(category_repo)
+        self.category_vm = CategoryViewModel(category_service)
+        self.category_view = CategoryManagementView(self.category_vm)
+        self.stacked_widget.addWidget(self.category_view)
+        
+        # View 3: Reports (Placeholder)
         self.reports_view = QWidget() # Placeholder
         self.stacked_widget.addWidget(self.reports_view)
 
-        # View 3: Users (Placeholder)
-        self.users_view = QWidget() # Placeholder
+        # View 4: Users
+        self.users_view = UserManagementView()
         self.stacked_widget.addWidget(self.users_view)
 
-        # View 4: Activity Log (Invoices)
-        # Re-purposing "Activity Log" or adding "Invoices" to sidebar?
-        # User asked for "Invoice" UI. Let's assume it maps to "Activity Log" or we should add "Invoices" to sidebar.
-        # Sidebar items: POS Screen, Products, Reports, Users, Activity Log, Settings.
-        # Let's map "Activity Log" to Invoices for now as it fits best, or add new item.
-        # Given the prompt "Invoice, Invoice Item", let's map it to a new view.
-        # But wait, sidebar is fixed in components. Let's check sidebar items again.
-        # Items: POS Screen, Products, Reports, Users, Activity Log, Settings.
-        # I will map "Activity Log" (Index 4) to InvoiceManagementView for this task.
-        
+        # View 5: Activity Log (Invoices)
         self.invoice_view = InvoiceManagementView()
         self.stacked_widget.addWidget(self.invoice_view) 
         
-        # View 5: Settings (Placeholder)
+        # View 6: Settings (Placeholder)
         self.settings_view = QWidget()
         self.stacked_widget.addWidget(self.settings_view)
 
@@ -91,10 +97,11 @@ class DashboardView(QMainWindow):
         # Map sidebar index to stacked widget index
         # 0: POS Screen -> SummaryView
         # 1: Products -> ProductManagementView
-        # 2: Reports -> Placeholder
-        # 3: Users -> Placeholder
-        # 4: Activity Log -> InvoiceManagementView
-        # 5: Settings -> Placeholder
+        # 2: Categories -> CategoryManagementView
+        # 3: Reports -> Placeholder
+        # 4: Users -> UserManagementView
+        # 5: Activity Log -> InvoiceManagementView
+        # 6: Settings -> Placeholder
         
         if index < self.stacked_widget.count():
             self.stacked_widget.setCurrentIndex(index)

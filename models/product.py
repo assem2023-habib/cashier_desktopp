@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from models.base import Base
 from sqlalchemy.orm import relationship
     
@@ -10,7 +10,9 @@ class Product(Base):
     price= Column(Integer, nullable= False)
     quantity= Column(Integer, default= 0)
     barcode= Column(String(50), unique= True, nullable= True)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
 
+    category = relationship("Category", back_populates="products")
     items = relationship("InvoiceItem", back_populates="product")
 
     def __repr__(self):
