@@ -137,8 +137,8 @@ class ProductViewModel(QObject):
             self._current_page -= 1
             self.load_products()
 
-    @Slot(str, str, str, str, object, str)
-    def addProduct(self, name, barcode, price_str, quantity_str, category_id, low_stock_threshold):
+    @Slot(str, str, str, object, str)
+    def addProduct(self, name, price_str, quantity_str, category_id, low_stock_threshold):
         try:
             price = int(float(price_str)) # Handle potential float input
             quantity = int(quantity_str)
@@ -150,7 +150,8 @@ class ProductViewModel(QObject):
             # low_stock_threshold is ignored for persistence as per plan
             # but we accept it to match UI
             
-            product = self.product_service.create_product(name, barcode, price, quantity, category_id)
+            # barcode will be auto-generated in service
+            product = self.product_service.create_product(name, price, quantity, category_id)
             self._success = "Product added successfully"
             self.successChanged.emit(self._success)
             self.load_products() # Refresh list

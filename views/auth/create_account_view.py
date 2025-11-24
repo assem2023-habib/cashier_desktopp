@@ -127,7 +127,7 @@ class CreateAccountView(QMainWindow):
         # BUT it doesn't support border in `_apply_style`.
         # So I should probably just use a standard QPushButton for the Login button or modify PrimaryButton to support borders.
         # Given the prompt "Border: Thin, light grey border", PrimaryButton doesn't seem to support it via init.
-        # I'll use a standard QPushButton for the login button to be safe and exact.
+        # I'll use a standard QPushButton for the Login button to be safe and exact.
         
         from PySide6.QtWidgets import QPushButton
         self.btn_login = QPushButton("Login")
@@ -200,7 +200,7 @@ class CreateAccountView(QMainWindow):
         from views.dashboard.dashboard_view import DashboardView
         from viewmodels.dashboard.dashboard_viewmodel import DashboardViewModel
         
-        dashboard_vm = DashboardViewModel()
+        dashboard_vm = DashboardViewModel(db_session=self.vm.db_session, current_user=self.vm.created_user)
         self.dashboard_window = DashboardView(dashboard_vm)
         self.dashboard_window.show()
         self.close()

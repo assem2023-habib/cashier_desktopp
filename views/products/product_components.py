@@ -319,8 +319,24 @@ class AddEditProductDialog(QDialog):
         self.name_input = self._create_input("Product Name", "📦 Product Name", product.name if product else "")
         card_layout.addWidget(self.name_input)
         
-        self.barcode_input = self._create_input("Barcode", "🔢 Barcode", product.barcode if product else "", is_barcode=True)
-        card_layout.addWidget(self.barcode_input)
+        # Barcode - show for editing (read-only), auto-generated for new products
+        if product:
+            barcode_label = QLabel("🔢 Barcode (Auto-generated)")
+            barcode_label.setStyleSheet(f"font-weight: bold; color: {COLOR_DARK_GREY};")
+            card_layout.addWidget(barcode_label)
+            
+            barcode_display = QLabel(product.barcode)
+            barcode_display.setStyleSheet(f"""
+                QLabel {{
+                    border: 1px solid {COLOR_BORDER};
+                    border-radius: 6px;
+                    padding: 10px;
+                    font-family: {FONT_FAMILY};
+                    color: {COLOR_MEDIUM_GREY};
+                    background-color: #F5F5F5;
+                }}
+            """)
+            card_layout.addWidget(barcode_display)
         
         self.price_input = self._create_input("Price", "💲 Price", str(product.price) if product else "")
         card_layout.addWidget(self.price_input)
@@ -497,7 +513,7 @@ class AddEditProductDialog(QDialog):
     def get_data(self):
         return {
             "name": self.name_input.findChild(QLineEdit).text(),
-            "barcode": self.barcode_input.findChild(QLineEdit).text(),
+            # barcode will be auto-generated in service
             "price": self.price_input.findChild(QLineEdit).text(),
             "quantity": self.quantity_input.findChild(QLineEdit).text(),
             "category_id": self.category_combo.currentData(),

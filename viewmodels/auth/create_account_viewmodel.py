@@ -15,9 +15,12 @@ class CreateAccountViewModel(QObject):
     goTologinRequested= Signal()
     togglePasswordVisibilityRequested= Signal(bool)
 
-    def __init__(self, db_session):
+    def __init__(self, db_session: Session):
         super().__init__()
 
+        self.db_session = db_session  # حفظ الـ session
+        self.created_user = None  # المستخدم المُنشأ
+        
         self._username= ""
         self._password= ""
         self._confirm_password= ""
@@ -108,6 +111,7 @@ class CreateAccountViewModel(QObject):
         self.set_loading(False)
 
         if user:
+            self.created_user = user  # حفظ المستخدم المُنشأ
             self.set_success("Account created successfully!")
             self.createAccountRequested.emit()
         else:

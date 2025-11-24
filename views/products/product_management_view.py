@@ -73,7 +73,6 @@ class ProductManagementView(QWidget):
             data = dialog.get_data()
             self.vm.addProduct(
                 data["name"],
-                data["barcode"],
                 data["price"],
                 data["quantity"],
                 data["category_id"],
@@ -92,7 +91,7 @@ class ProductManagementView(QWidget):
             self.vm.updateProduct(
                 product_id,
                 data["name"],
-                data["barcode"],
+                product.barcode,  # Keep original barcode (immutable)
                 data["price"],
                 data["quantity"],
                 data["category_id"],

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from typing import Optional, List
+import uuid
 from models.product import Product
 from core.repositories.product_repository import ProductRepository
 
@@ -12,11 +13,11 @@ class ProductService:
     def create_product(
             self,
             name: str,
-            barcode: str,
             price: int,
             quantity: int,
             category_id: Optional[int] = None
     )->Optional[Product]:
+        """Create a new product with auto-generated barcode"""
         try:
             if price <= 0:
                 raise ValueError("Price must be greater than 0")
@@ -24,9 +25,12 @@ class ProductService:
             if quantity < 0:
                 raise ValueError("Stock cannot be negative")
             
-            existing= self.product_repo.get_by_barcode(barcode)
-            if existing:
-                raise ValueError(f"Product with barcode {barcode} already exists")
+            # Auto-generate unique barcode using UUID
+            barcode = str(uuid.uuid4())[:12].replace('-', '').upper()
+            
+            # Ensure uniqueness (very unlikely to collision with UUID, but safe)
+            while self.product_repo.get_by_barcode(barcode):
+                barcode = str(uuid.uuid4())[:12].replace('-', '').upper()
             
             product= Product(
                 name= name,
@@ -40,9 +44,15 @@ class ProductService:
             self.db.commit()
             return product
         
-        except (SQLAlchemyError, ValueError) as e:
+        except ValueError:
             self.db.rollback()
             raise
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError(f"Database constraint violation")
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise ValueError(f"Database error: {str(e)}")
         
     def update_quantity(
         self,
@@ -108,19 +118,15 @@ class ProductService:
         quantity: int,
         category_id: Optional[int] = None
     ) -> Optional[Product]:
+        """Update product - barcode cannot be changed"""
         try:
             product = self.product_repo.get(product_id)
             if not product:
                 raise ValueError(f"Product {product_id} not found")
 
-            # Check if barcode is being changed to one that already exists
-            if barcode != product.barcode:
-                existing = self.product_repo.get_by_barcode(barcode)
-                if existing:
-                    raise ValueError(f"Product with barcode {barcode} already exists")
-
+            # Barcode is immutable - ignore the barcode parameter
+            # (kept in signature for compatibility but not used)
             product.name = name
-            product.barcode = barcode
             product.price = price
             product.quantity = quantity
             product.category_id = category_id
@@ -128,9 +134,15 @@ class ProductService:
             product = self.product_repo.update(product)
             self.db.commit()
             return product
-        except (SQLAlchemyError, ValueError) as e:
+        except ValueError:
             self.db.rollback()
             raise
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError(f"Database constraint violation")
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise ValueError(f"Database error: {str(e)}")
 
     def delete_product(self, product_id: int) -> bool:
         try:
@@ -143,19 +155,17 @@ class ProductService:
                 self.db.commit()
                 return True
             return False
-        except (SQLAlchemyError, ValueError) as e:
+        except ValueError:
             self.db.rollback()
             raise
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise ValueError(f"Database error: {str(e)}")
 
     def get_products_paginated(self, page: int, per_page: int) -> tuple[List[Product], int]:
         """Returns a tuple of (products, total_count)"""
         try:
             products = self.product_repo.paginate(page, per_page)
-            # We need a count method in repo ideally, but for now let's just get all count
-            # This is inefficient for large datasets but works for now. 
-            # Ideally repo should have count().
-            # Let's add a quick count query here or just list() len if repo doesn't support count.
-            # Checking repo... it has list().
             total_count = self.db.query(Product).count()
             return products, total_count
         except SQLAlchemyError:
@@ -177,6 +187,9 @@ class ProductService:
 
             return product
         
-        except(SQLAlchemyError, ValueError) as e:
+        except ValueError:
             self.db.rollback()
             raise
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise ValueError(f"Database error: {str(e)}")
