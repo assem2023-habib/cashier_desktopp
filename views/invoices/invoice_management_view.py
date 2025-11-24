@@ -73,8 +73,45 @@ class InvoiceManagementView(QWidget):
 
     def _show_error(self, message):
         if message:
-            QMessageBox.warning(self, "Error", message)
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Error")
+            msg.setText(message)
+            msg.setIcon(QMessageBox.Warning)
+            msg.setStandardButtons(QMessageBox.Ok)
+            self._apply_msg_box_style(msg)
+            msg.exec()
 
     def _show_success(self, message):
         if message:
-            QMessageBox.information(self, "Success", message)
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Success")
+            msg.setText(message)
+            msg.setIcon(QMessageBox.Information)
+            msg.setStandardButtons(QMessageBox.Ok)
+            self._apply_msg_box_style(msg)
+            msg.exec()
+
+    def _apply_msg_box_style(self, msg_box):
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+            }
+            QMessageBox QLabel {
+                color: #333333;
+                font-family: Sans-serif;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #2F3C64;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-family: Sans-serif;
+                font-size: 12px;
+                min-width: 60px;
+            }
+            QPushButton:hover {
+                background-color: #1E2A47;
+            }
+        """)

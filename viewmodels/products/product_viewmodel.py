@@ -2,7 +2,6 @@ from PySide6.QtCore import QObject, Signal, Slot, Property
 from sqlalchemy.orm import Session
 from core.services.product_service import ProductService
 from core.services.category_service import CategoryService
-from core.repositories.category_repository import CategoryRepository
 from models.product import Product
 import math
 
@@ -18,7 +17,7 @@ class ProductViewModel(QObject):
         super().__init__()
         self.db_session = db_session
         self.product_service = ProductService(db_session)
-        self.category_service = CategoryService(CategoryRepository(db_session))
+        self.category_service = CategoryService(db_session)
         
         self._products = []
         self._categories = []
@@ -138,23 +137,23 @@ class ProductViewModel(QObject):
             self._current_page -= 1
             self.load_products()
 
-    @Slot(str, str, str, str, int, str)
+    @Slot(str, str, str, str, object, str)
     def addProduct(self, name, barcode, price_str, quantity_str, category_id, low_stock_threshold):
         try:
             price = int(float(price_str)) # Handle potential float input
             quantity = int(quantity_str)
             
+            # Handle category_id being None or 0 (from QComboBox default)
+            if not category_id:
+                category_id = None
+            
             # low_stock_threshold is ignored for persistence as per plan
             # but we accept it to match UI
             
             product = self.product_service.create_product(name, barcode, price, quantity, category_id)
-            if product:
-                self._success = "Product added successfully"
-                self.successChanged.emit(self._success)
-                self.load_products() # Refresh list
-            else:
-                self._error = "Failed to add product. Barcode might exist."
-                self.errorChanged.emit(self._error)
+            self._success = "Product added successfully"
+            self.successChanged.emit(self._success)
+            self.load_products() # Refresh list
         except ValueError as e:
             self._error = str(e)
             self.errorChanged.emit(self._error)
@@ -162,20 +161,19 @@ class ProductViewModel(QObject):
             self._error = f"An error occurred: {str(e)}"
             self.errorChanged.emit(self._error)
 
-    @Slot(int, str, str, str, str, int, str)
+    @Slot(int, str, str, str, str, object, str)
     def updateProduct(self, product_id, name, barcode, price_str, quantity_str, category_id, low_stock_threshold):
         try:
             price = int(float(price_str))
             quantity = int(quantity_str)
             
+            if not category_id:
+                category_id = None
+            
             product = self.product_service.update_product(product_id, name, barcode, price, quantity, category_id)
-            if product:
-                self._success = "Product updated successfully"
-                self.successChanged.emit(self._success)
-                self.load_products()
-            else:
-                self._error = "Failed to update product."
-                self.errorChanged.emit(self._error)
+            self._success = "Product updated successfully"
+            self.successChanged.emit(self._success)
+            self.load_products()
         except ValueError as e:
             self._error = str(e)
             self.errorChanged.emit(self._error)
@@ -185,13 +183,14 @@ class ProductViewModel(QObject):
 
     @Slot(int)
     def deleteProduct(self, product_id):
-        if self.product_service.delete_product(product_id):
+        try:
+            self.product_service.delete_product(product_id)
             self._success = "Product deleted successfully"
             self.successChanged.emit(self._success)
             # Adjust page if empty
             if len(self._products) == 1 and self._current_page > 1:
                 self._current_page -= 1
             self.load_products()
-        else:
-            self._error = "Failed to delete product"
+        except Exception as e:
+            self._error = f"Failed to delete product: {str(e)}"
             self.errorChanged.emit(self._error)

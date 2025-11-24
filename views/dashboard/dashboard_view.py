@@ -7,7 +7,6 @@ from views.products.product_management_view import ProductManagementView
 from views.categories.category_management_view import CategoryManagementView
 from viewmodels.categories.category_viewmodel import CategoryViewModel
 from core.services.category_service import CategoryService
-from core.repositories.category_repository import CategoryRepository
 from views.dashboard.summary_view import SummaryView
 from views.invoices.invoice_management_view import InvoiceManagementView
 from views.users.user_management_view import UserManagementView
@@ -55,8 +54,7 @@ class DashboardView(QMainWindow):
         
         # View 2: Categories
         # Initialize Category ViewModel
-        category_repo = CategoryRepository(self.vm.db_session)
-        category_service = CategoryService(category_repo)
+        category_service = CategoryService(self.vm.db_session)
         self.category_vm = CategoryViewModel(category_service)
         self.category_view = CategoryManagementView(self.category_vm)
         self.stacked_widget.addWidget(self.category_view)

@@ -351,6 +351,37 @@ class AddEditProductDialog(QDialog):
             }}
             QComboBox::drop-down {{
                 border: none;
+                width: 20px;
+            }}
+            QComboBox::down-arrow {{
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid {COLOR_DARK_GREY};
+                width: 0;
+                height: 0;
+            }}
+            QComboBox QAbstractItemView {{
+                border: 1px solid {COLOR_BORDER};
+                background-color: {COLOR_WHITE};
+                color: {COLOR_DARK_GREY};
+                selection-background-color: #E8F4F8;
+                selection-color: {COLOR_DARK_GREY};
+                padding: 5px;
+                outline: none;
+            }}
+            QComboBox QAbstractItemView::item {{
+                padding: 8px 10px;
+                color: {COLOR_DARK_GREY};
+                background-color: {COLOR_WHITE};
+            }}
+            QComboBox QAbstractItemView::item:selected {{
+                background-color: #E8F4F8;
+                color: {COLOR_DARK_GREY};
+            }}
+            QComboBox QAbstractItemView::item:hover {{
+                background-color: #F0F9FF;
+                color: {COLOR_DARK_GREY};
             }}
         """)
         card_layout.addWidget(self.category_combo)

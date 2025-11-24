@@ -68,13 +68,47 @@ class CategoryManagementView(QWidget):
             self.viewmodel.update_category(category.id, data["name"])
 
     def _delete_category(self, category_id):
-        reply = QMessageBox.question(
-            self, "Confirm Delete", 
-            "Are you sure you want to delete this category?",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-        )
-        if reply == QMessageBox.Yes:
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Confirm Delete")
+        msg.setText("Are you sure you want to delete this category?")
+        msg.setIcon(QMessageBox.Question)
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg.setDefaultButton(QMessageBox.No)
+        self._apply_msg_box_style(msg)
+        
+        if msg.exec() == QMessageBox.Yes:
             self.viewmodel.delete_category(category_id)
 
     def _show_error(self, message):
-        QMessageBox.critical(self, "Error", message)
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Error")
+        msg.setText(message)
+        msg.setIcon(QMessageBox.Critical)
+        msg.setStandardButtons(QMessageBox.Ok)
+        self._apply_msg_box_style(msg)
+        msg.exec()
+
+    def _apply_msg_box_style(self, msg_box):
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+            }
+            QMessageBox QLabel {
+                color: #333333;
+                font-family: Sans-serif;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #2F3C64;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-family: Sans-serif;
+                font-size: 12px;
+                min-width: 60px;
+            }
+            QPushButton:hover {
+                background-color: #1E2A47;
+            }
+        """)

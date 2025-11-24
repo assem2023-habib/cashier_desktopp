@@ -14,7 +14,8 @@ class ProductService:
             name: str,
             barcode: str,
             price: int,
-            quantity: int
+            quantity: int,
+            category_id: Optional[int] = None
     )->Optional[Product]:
         try:
             if price <= 0:
@@ -32,6 +33,7 @@ class ProductService:
                 barcode= barcode,
                 price= price,
                 quantity= quantity,
+                category_id= category_id
             )
 
             product = self.product_repo.add(product)
@@ -40,7 +42,7 @@ class ProductService:
         
         except (SQLAlchemyError, ValueError) as e:
             self.db.rollback()
-            return None
+            raise
         
     def update_quantity(
         self,
@@ -73,7 +75,7 @@ class ProductService:
         
         except (SQLAlchemyError, ValueError) as e:
             self.db.rollback()
-            return None
+            raise
         
     def get_low_quantity_products(self, threshold: int= 10)->List[Product]:
         try:
@@ -103,7 +105,8 @@ class ProductService:
         name: str,
         barcode: str,
         price: int,
-        quantity: int
+        quantity: int,
+        category_id: Optional[int] = None
     ) -> Optional[Product]:
         try:
             product = self.product_repo.get(product_id)
@@ -120,28 +123,29 @@ class ProductService:
             product.barcode = barcode
             product.price = price
             product.quantity = quantity
+            product.category_id = category_id
 
             product = self.product_repo.update(product)
             self.db.commit()
             return product
         except (SQLAlchemyError, ValueError) as e:
             self.db.rollback()
-            return None
+            raise
 
     def delete_product(self, product_id: int) -> bool:
         try:
             product = self.product_repo.get(product_id)
             if not product:
-                return False
+                raise ValueError("Product not found")
             
             success = self.product_repo.delete(product)
             if success:
                 self.db.commit()
                 return True
             return False
-        except SQLAlchemyError:
+        except (SQLAlchemyError, ValueError) as e:
             self.db.rollback()
-            return False
+            raise
 
     def get_products_paginated(self, page: int, per_page: int) -> tuple[List[Product], int]:
         """Returns a tuple of (products, total_count)"""
@@ -175,4 +179,4 @@ class ProductService:
         
         except(SQLAlchemyError, ValueError) as e:
             self.db.rollback()
-            return None
+            raise
